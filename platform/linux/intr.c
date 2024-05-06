@@ -6,6 +6,7 @@
 #include "platform.h"
 
 #include "util.h"
+#include "net.h"
 
 struct irq_entry {
   struct irq_entry *next;
@@ -87,6 +88,9 @@ static void *intr_thread(void *arg) {
       case SIGHUP: /* SIGHUP (signal hang up): signal for notification of terminated interrupt thread */
         terminate = 1;
         break;
+      case SIGUSR1: /* SIGUSR1: signal for software interrupt */
+        net_softirq_handler();
+        break;
       default:
         for (entry = irqs; entry; entry = entry->next) {
           if (entry->irq == (unsigned int)sig) { /* call interrupt handler corresponded with IRQ number */
@@ -146,6 +150,8 @@ int intr_init(void) {
   sigemptyset(&sigmask);
   /* add SIGHUP to signal set (for notifications of terminating interrupt thread) */
   sigaddset(&sigmask, SIGHUP);
+  /* add SIGUSR1 to signal set (for notifications of software interrupt) */
+  sigaddset(&sigmask, SIGUSR1);
 
   return 0;
 }
